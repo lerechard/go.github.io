@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Go -> Fiscon</title>
+  <style>
+    /* ---- Base Reset ---- */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: #000; color: #fff; }
+
+    /* ---- Configurable tokens ---- */
+    :root {
+      --hover-scale: 1.08;         /* how much buttons grow on hover */
+      --transition-ms: 180ms;       /* hover animation duration */
+      --mobile-breakpoint: 768px;   /* <768px shows the mobile placeholder */
+      --letterbox-color: #000;      /* background behind contained image */
+    }
+
+    /* ---- Layout containers ---- */
+    .page { min-height: 100vh; }
+    .hidden { display: none !important; }
+
+    /* ---- Desktop view ---- */
+    #desktop {
+      position: relative;
+      overflow: hidden; /* keep everything inside the viewport */
+    }
+    /* Background that always shows top & bottom (entire image height visible) */
+    .bg-fit-contain {
+      position: absolute; inset: 0; background-position: center; background-repeat: no-repeat; background-size: contain; background-color: var(--letterbox-color);
+    }
+
+    /* Button layer */
+    .button-layer { position: absolute; inset: 0; }
+
+    /* Clickable image buttons */
+    .button-link { position: absolute; transform: translate(-50%, -50%); display: inline-block; }
+    .button-img { display: block; width: var(--btn-size, 140px); height: auto; /* removed drop-shadow */ filter: none; transition: transform var(--transition-ms) ease-out; }
+    .button-link:hover .button-img, .button-link:focus-visible .button-img { transform: scale(var(--hover-scale)); }
+    .button-link:focus-visible { outline: 2px solid #fff; outline-offset: 4px; border-radius: 12px; }
+
+    /* ---- Mobile placeholder ---- */
+    #mobile {
+      display: grid; place-items: center; padding: 24px; text-align: center; background: #0a0a0a; color: #e5e5e5;
+    }
+    .mobile-card { max-width: 38rem; background: #111; border: 1px solid #222; border-radius: 16px; padding: 28px; }
+    .mobile-card h1 { margin: 0 0 8px; font-size: 1.5rem; }
+    .mobile-card p { margin: 0; opacity: .85; line-height: 1.5; }
+    .mobile-actions { margin-top: 16px; display: flex; gap: 10px; justify-content: center; }
+    .btn { appearance: none; border: 1px solid #2a2a2a; background: #1a1a1a; color: #fafafa; border-radius: 10px; padding: 10px 14px; cursor: pointer; }
+    .btn:hover { filter: brightness(1.15); }
+
+    /* Prefer reduced motion: disable hover scale animation */
+    @media (prefers-reduced-motion: reduce) {
+      .button-img { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Desktop Experience -->
+  <main id="desktop" class="page" aria-hidden="true">
+    <div id="bg" class="bg-fit-contain" role="img" aria-label="Background image"></div>
+    <div id="layer" class="button-layer" aria-label="Interactive buttons"></div>
+  </main>
+
+  <!-- Mobile Placeholder (you can turn this into a separate page later) -->
+  <section id="mobile" class="page hidden" aria-hidden="true">
+    <div class="mobile-card">
+      <h1>Mobile Version Coming Soon</h1>
+      <p>This site is best experienced on desktop for now. We’re building a dedicated mobile layout.</p>
+      <div class="mobile-actions">
+        <button class="btn" id="open-desktop-anyway">Open desktop version</button>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    /* ======================================================
+     * CONFIG — replace with your assets & links
+     * ====================================================== */
+    const BACKGROUND_URL = 'desktop.png';
+
+    // Add new buttons by adding objects to this array.
+    // x,y are percentages (0–100). size = width in pixels.
+    const BUTTONS = [
+      {
+        id: 'center-btn',
+        src: 'danger.png',  
+        href: 'logon.html',
+        alt: 'Center Button',
+        x: 50.1,
+        y: 41.1,
+        size: 187,
+      },
+      {
+        id: 'top-left-btn',
+        src: 'go.png', 
+        href: 'https://go.fiscon.cc',
+        alt: 'Top Left Button',
+        x: 30,
+        y: 8.2,
+        size: 362,
+      },
+      {
+        id: 'bottom-right-btn',
+        src: 'zoom.png',
+        href: 'https://fiscon.cc',
+        alt: 'Bottom Right Button',
+        x: 75.6,
+        y: 69.3,
+        size: 181,
+      },
+      {
+        id: 'bottom-left-btn-2',
+        src: 'zf.png',
+        href: 'https://fiscon.cc',
+        alt: 'Bottom Left Button 2',
+        x: 29.7,
+        y: 74.2,
+        size: 346,
+      },
+      {
+        id: 'bottom-left-btn-1',
+        src: 'dawg.png', 
+        href: 'https://fiscon.cc',
+        alt: 'Bottom Left Button 1',
+        x: 24.4,
+        y: 56,
+        size: 196,
+      },
+      // Add more buttons here...
+    ];
+
+    // Mobile breakpoint used to switch views (keep in sync with CSS var)
+    const MOBILE_BREAKPOINT = 768; // px
+
+    /* ======================================================
+     * RUNTIME — no changes needed beyond this point
+     * ====================================================== */
+    const desktopEl = document.getElementById('desktop');
+    const mobileEl  = document.getElementById('mobile');
+    const layerEl   = document.getElementById('layer');
+    const bgEl      = document.getElementById('bg');
+
+    // Set background image (contain ensures top & bottom always visible)
+    bgEl.style.backgroundImage = `url(${BACKGROUND_URL})`;
+
+    // Render buttons from BUTTONS array
+    function renderButtons() {
+      layerEl.innerHTML = '';
+      for (const btn of BUTTONS) {
+        const a = document.createElement('a');
+        a.href = btn.href;
+        a.className = 'button-link';
+        a.style.left = btn.x + '%';
+        a.style.top  = btn.y + '%';
+        a.style.setProperty('--btn-size', (btn.size || 140) + 'px');
+        a.setAttribute('aria-label', btn.alt || 'Button');
+        a.setAttribute('id', btn.id);
+        a.target = '_self'; // change to '_blank' if you want new tab
+
+        const img = document.createElement('img');
+        img.src = btn.src;
+        img.alt = btn.alt || '';
+        img.className = 'button-img';
+        img.decoding = 'async';
+        img.loading = 'eager';
+        img.draggable = false;
+
+        a.appendChild(img);
+        layerEl.appendChild(a);
+      }
+    }
+
+    // Toggle between desktop and mobile placeholder
+    function setView() {
+      const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
+      if (isMobile) {
+        desktopEl.classList.add('hidden');
+        mobileEl.classList.remove('hidden');
+        desktopEl.setAttribute('aria-hidden', 'true');
+        mobileEl.setAttribute('aria-hidden', 'false');
+      } else {
+        mobileEl.classList.add('hidden');
+        desktopEl.classList.remove('hidden');
+        mobileEl.setAttribute('aria-hidden', 'true');
+        desktopEl.setAttribute('aria-hidden', 'false');
+      }
+    }
+
+    // Allow users to force-open desktop on mobile
+    document.getElementById('open-desktop-anyway')?.addEventListener('click', () => {
+      mobileEl.classList.add('hidden');
+      desktopEl.classList.remove('hidden');
+      mobileEl.setAttribute('aria-hidden', 'true');
+      desktopEl.setAttribute('aria-hidden', 'false');
+    });
+
+    // Initialize
+    renderButtons();
+    setView();
+
+    // Update on resize
+    window.addEventListener('resize', setView);
+
+    // Optional: If you truly want a separate page for mobile later, you can
+    // replace setView() logic with a redirect like this:
+    // if (window.innerWidth < MOBILE_BREAKPOINT) { window.location.href = 'mobile.html'; }
+  </script>
+
+  <noscript>
+    <style>#desktop, #mobile { display:block!important } #desktop { position:relative } #mobile { display:none!important }</style>
+    <div style="position:absolute;inset:0;background:#111;color:#eee;padding:1rem">
+      <p>This site works best with JavaScript enabled. You can still view the background and buttons statically.</p>
+    </div>
+  </noscript>
+</body>
+</html>
