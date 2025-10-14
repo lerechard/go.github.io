@@ -10,28 +10,27 @@
     html, body { height: 100%; margin: 0; }
     body {
       font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      background: #000; /* fallback */
+      background: #000;
       color: #fff;
       overflow-x: hidden;
     }
 
-    /* ---- Pastel rainbow background (fixed layer) ---- */
+    /* ---- Bright pastel rainbow background (FULL SCREEN) ---- */
     .rainbow-bg {
       position: fixed;
       inset: 0;
-      z-index: 0;                 /* BELOW all app layers (which are z-index:1) */
-      pointer-events: none;       /* never block clicks */
+      z-index: 0;
+      pointer-events: none;
       background: linear-gradient(
         120deg,
-        rgba(255,182,193,0.55),   /* lightpink */
-        rgba(255,218,185,0.55),   /* peachpuff */
-        rgba(173,216,230,0.55),   /* lightblue */
-        rgba(221,160,221,0.55),   /* plum */
-        rgba(152,251,152,0.55)    /* palegreen */
+        rgba(255,105,180,0.8),   /* hot pink */
+        rgba(255,165,0,0.8),     /* orange */
+        rgba(135,206,250,0.8),   /* sky blue */
+        rgba(186,85,211,0.8),    /* medium orchid */
+        rgba(60,179,113,0.8)     /* medium sea green */
       );
       background-size: 400% 400%;
-      animation: rainbowFade 25s ease infinite;
-      filter: blur(36px);         /* soft glow */
+      animation: rainbowFade 20s ease infinite;
       will-change: background-position;
     }
 
@@ -46,66 +45,50 @@
       --hover-scale: 1.08;
       --transition-ms: 180ms;
       --mobile-breakpoint: 768px;
-      --letterbox-color: #000; /* background behind contained image */
+      --letterbox-color: transparent;
     }
 
-    /* ---- Layout containers ---- */
     .page { min-height: 100vh; }
     .hidden { display: none !important; }
 
-    /* Put all app UI in a layer above the rainbow */
     #desktop, #mobile { position: relative; z-index: 1; }
-
-    /* ---- Desktop view ---- */
     #desktop { overflow: hidden; }
 
-    /* Background that always shows top & bottom (entire image height visible) */
     .bg-fit-contain {
       position: absolute; inset: 0;
       background-position: center;
       background-repeat: no-repeat;
       background-size: contain;
       background-color: var(--letterbox-color);
-      z-index: 0; /* under buttons within #desktop */
+      z-index: 0;
     }
 
-    /* Button layer */
-    .button-layer {
-      position: absolute; inset: 0;
-      z-index: 1; /* above image */
-    }
+    .button-layer { position: absolute; inset: 0; z-index: 1; }
 
-    /* Clickable image buttons */
     .button-link { position: absolute; transform: translate(-50%, -50%); display: inline-block; }
     .button-img {
       display: block;
       width: var(--btn-size, 140px);
       height: auto;
-      filter: none;
       transition: transform var(--transition-ms) ease-out;
     }
     .button-link:hover .button-img,
-    .button-link:focus-visible .button-img {
-      transform: scale(var(--hover-scale));
-    }
-    .button-link:focus-visible {
-      outline: 2px solid #fff;
-      outline-offset: 4px;
-      border-radius: 12px;
-    }
+    .button-link:focus-visible .button-img { transform: scale(var(--hover-scale)); }
+    .button-link:focus-visible { outline: 2px solid #fff; outline-offset: 4px; border-radius: 12px; }
 
-    /* ---- Mobile placeholder ---- */
     #mobile {
       display: grid; place-items: center;
       padding: 24px; text-align: center;
-      background: #0a0a0a; color: #e5e5e5;
+      background: transparent;
+      color: #e5e5e5;
     }
     .mobile-card {
-      max-width: 38rem; background: #111; border: 1px solid #222;
+      max-width: 38rem; background: rgba(17,17,17,0.8); border: 1px solid #222;
       border-radius: 16px; padding: 28px;
+      backdrop-filter: blur(6px);
     }
     .mobile-card h1 { margin: 0 0 8px; font-size: 1.5rem; }
-    .mobile-card p { margin: 0; opacity: .85; line-height: 1.5; }
+    .mobile-card p { margin: 0; opacity: .9; line-height: 1.5; }
     .mobile-actions { margin-top: 16px; display: flex; gap: 10px; justify-content: center; }
     .btn {
       appearance: none; border: 1px solid #2a2a2a;
@@ -114,7 +97,6 @@
     }
     .btn:hover { filter: brightness(1.15); }
 
-    /* Motion preferences */
     @media (prefers-reduced-motion: reduce) {
       .button-img { transition: none; }
       .rainbow-bg { animation: none; }
@@ -122,16 +104,13 @@
   </style>
 </head>
 <body>
-  <!-- Pastel rainbow layer (behind everything else) -->
   <div class="rainbow-bg" aria-hidden="true"></div>
 
-  <!-- Desktop Experience -->
   <main id="desktop" class="page" aria-hidden="true">
     <div id="bg" class="bg-fit-contain" role="img" aria-label="Background image"></div>
     <div id="layer" class="button-layer" aria-label="Interactive buttons"></div>
   </main>
 
-  <!-- Mobile Placeholder -->
   <section id="mobile" class="page hidden" aria-hidden="true">
     <div class="mobile-card">
       <h1>Mobile Version Coming Soon</h1>
@@ -143,34 +122,23 @@
   </section>
 
   <script>
-    /* ======================================================
-     * CONFIG — replace with your assets & links
-     * ====================================================== */
     const BACKGROUND_URL = 'desktop.png';
-
-    // x,y in percentages; size in px
     const BUTTONS = [
-      { id: 'center-btn',       src: 'danger.png', href: 'logon.html',        alt: 'Center Button',         x: 50.1, y: 41.1, size: 187 },
-      { id: 'top-left-btn',     src: 'go.png',     href: 'https://go.fiscon.cc', alt: 'Top Left Button',    x: 30,   y: 8.2,  size: 362 },
-      { id: 'bottom-right-btn', src: 'zoom.png',   href: 'https://fiscon.cc', alt: 'Bottom Right Button',   x: 75.6, y: 69.3, size: 181 },
-      { id: 'bottom-left-btn-2',src: 'zf.png',     href: 'https://fiscon.cc', alt: 'Bottom Left Button 2',  x: 29.7, y: 74.2, size: 346 },
-      { id: 'bottom-left-btn-1',src: 'dawg.png',   href: 'https://fiscon.cc', alt: 'Bottom Left Button 1',  x: 24.4, y: 56,   size: 196 },
+      { id: 'center-btn',       src: 'danger.png', href: 'logon.html',           alt: 'Center Button',        x: 50.1, y: 41.1, size: 187 },
+      { id: 'top-left-btn',     src: 'go.png',     href: 'https://go.fiscon.cc', alt: 'Top Left Button',     x: 30,   y: 8.2,  size: 362 },
+      { id: 'bottom-right-btn', src: 'zoom.png',   href: 'https://fiscon.cc',    alt: 'Bottom Right Button', x: 75.6, y: 69.3, size: 181 },
+      { id: 'bottom-left-btn-2',src: 'zf.png',     href: 'https://fiscon.cc',    alt: 'Bottom Left Button 2',x: 29.7, y: 74.2, size: 346 },
+      { id: 'bottom-left-btn-1',src: 'dawg.png',   href: 'https://fiscon.cc',    alt: 'Bottom Left Button 1',x: 24.4, y: 56,   size: 196 },
     ];
 
-    const MOBILE_BREAKPOINT = 768; // px
-
-    /* ======================================================
-     * RUNTIME
-     * ====================================================== */
+    const MOBILE_BREAKPOINT = 768;
     const desktopEl = document.getElementById('desktop');
     const mobileEl  = document.getElementById('mobile');
     const layerEl   = document.getElementById('layer');
     const bgEl      = document.getElementById('bg');
 
-    // Set background image (contain ensures top & bottom always visible)
     bgEl.style.backgroundImage = `url(${BACKGROUND_URL})`;
 
-    // Render buttons from BUTTONS array
     function renderButtons() {
       layerEl.innerHTML = '';
       for (const btn of BUTTONS) {
@@ -197,7 +165,6 @@
       }
     }
 
-    // Toggle between desktop and mobile placeholder
     function setView() {
       const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
       if (isMobile) {
@@ -213,7 +180,6 @@
       }
     }
 
-    // Allow users to force-open desktop on mobile
     document.getElementById('open-desktop-anyway')?.addEventListener('click', () => {
       mobileEl.classList.add('hidden');
       desktopEl.classList.remove('hidden');
@@ -221,17 +187,9 @@
       desktopEl.setAttribute('aria-hidden', 'false');
     });
 
-    // Initialize
     renderButtons();
     setView();
     window.addEventListener('resize', setView);
   </script>
-
-  <noscript>
-    <style>#desktop, #mobile { display:block!important } #desktop { position:relative } #mobile { display:none!important }</style>
-    <div style="position:absolute;inset:0;background:#111;color:#eee;padding:1rem">
-      <p>This site works best with JavaScript enabled. You can still view the background and buttons statically.</p>
-    </div>
-  </noscript>
 </body>
 </html>
