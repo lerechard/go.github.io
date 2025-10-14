@@ -7,15 +7,46 @@
   <style>
     /* ---- Base Reset ---- */
     *, *::before, *::after { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: #000; color: #fff; }
+    html, body { height: 100%; margin: 0; }
+    body { 
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; 
+      background: #000; 
+      color: #fff; 
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ---- Pastel rainbow background layer ---- */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      background: linear-gradient(
+        120deg,
+        rgba(255, 182, 193, 0.6),
+        rgba(255, 218, 185, 0.6),
+        rgba(173, 216, 230, 0.6),
+        rgba(221, 160, 221, 0.6),
+        rgba(152, 251, 152, 0.6)
+      );
+      background-size: 400% 400%;
+      animation: rainbowFade 25s ease infinite;
+      filter: blur(40px);
+    }
+
+    @keyframes rainbowFade {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
 
     /* ---- Configurable tokens ---- */
     :root {
-      --hover-scale: 1.08;         /* how much buttons grow on hover */
-      --transition-ms: 180ms;       /* hover animation duration */
-      --mobile-breakpoint: 768px;   /* <768px shows the mobile placeholder */
-      --letterbox-color: #000;      /* background behind contained image */
+      --hover-scale: 1.08;
+      --transition-ms: 180ms;
+      --mobile-breakpoint: 768px;
+      --letterbox-color: #000;
     }
 
     /* ---- Layout containers ---- */
@@ -25,11 +56,18 @@
     /* ---- Desktop view ---- */
     #desktop {
       position: relative;
-      overflow: hidden; /* keep everything inside the viewport */
+      overflow: hidden;
     }
+
     /* Background that always shows top & bottom (entire image height visible) */
     .bg-fit-contain {
-      position: absolute; inset: 0; background-position: center; background-repeat: no-repeat; background-size: contain; background-color: var(--letterbox-color);
+      position: absolute; 
+      inset: 0; 
+      background-position: center; 
+      background-repeat: no-repeat; 
+      background-size: contain; 
+      background-color: var(--letterbox-color);
+      z-index: -1; /* sits above rainbow but below buttons */
     }
 
     /* Button layer */
@@ -37,19 +75,56 @@
 
     /* Clickable image buttons */
     .button-link { position: absolute; transform: translate(-50%, -50%); display: inline-block; }
-    .button-img { display: block; width: var(--btn-size, 140px); height: auto; /* removed drop-shadow */ filter: none; transition: transform var(--transition-ms) ease-out; }
-    .button-link:hover .button-img, .button-link:focus-visible .button-img { transform: scale(var(--hover-scale)); }
-    .button-link:focus-visible { outline: 2px solid #fff; outline-offset: 4px; border-radius: 12px; }
+    .button-img { 
+      display: block; 
+      width: var(--btn-size, 140px); 
+      height: auto; 
+      filter: none; 
+      transition: transform var(--transition-ms) ease-out; 
+    }
+    .button-link:hover .button-img, 
+    .button-link:focus-visible .button-img { 
+      transform: scale(var(--hover-scale)); 
+    }
+    .button-link:focus-visible { 
+      outline: 2px solid #fff; 
+      outline-offset: 4px; 
+      border-radius: 12px; 
+    }
 
     /* ---- Mobile placeholder ---- */
     #mobile {
-      display: grid; place-items: center; padding: 24px; text-align: center; background: #0a0a0a; color: #e5e5e5;
+      display: grid; 
+      place-items: center; 
+      padding: 24px; 
+      text-align: center; 
+      background: #0a0a0a; 
+      color: #e5e5e5;
     }
-    .mobile-card { max-width: 38rem; background: #111; border: 1px solid #222; border-radius: 16px; padding: 28px; }
+    .mobile-card { 
+      max-width: 38rem; 
+      background: #111; 
+      border: 1px solid #222; 
+      border-radius: 16px; 
+      padding: 28px; 
+    }
     .mobile-card h1 { margin: 0 0 8px; font-size: 1.5rem; }
     .mobile-card p { margin: 0; opacity: .85; line-height: 1.5; }
-    .mobile-actions { margin-top: 16px; display: flex; gap: 10px; justify-content: center; }
-    .btn { appearance: none; border: 1px solid #2a2a2a; background: #1a1a1a; color: #fafafa; border-radius: 10px; padding: 10px 14px; cursor: pointer; }
+    .mobile-actions { 
+      margin-top: 16px; 
+      display: flex; 
+      gap: 10px; 
+      justify-content: center; 
+    }
+    .btn { 
+      appearance: none; 
+      border: 1px solid #2a2a2a; 
+      background: #1a1a1a; 
+      color: #fafafa; 
+      border-radius: 10px; 
+      padding: 10px 14px; 
+      cursor: pointer; 
+    }
     .btn:hover { filter: brightness(1.15); }
 
     /* Prefer reduced motion: disable hover scale animation */
@@ -65,7 +140,7 @@
     <div id="layer" class="button-layer" aria-label="Interactive buttons"></div>
   </main>
 
-  <!-- Mobile Placeholder (you can turn this into a separate page later) -->
+  <!-- Mobile Placeholder -->
   <section id="mobile" class="page hidden" aria-hidden="true">
     <div class="mobile-card">
       <h1>Mobile Version Coming Soon</h1>
@@ -77,77 +152,25 @@
   </section>
 
   <script>
-    /* ======================================================
-     * CONFIG — replace with your assets & links
-     * ====================================================== */
     const BACKGROUND_URL = 'desktop.png';
 
-    // Add new buttons by adding objects to this array.
-    // x,y are percentages (0–100). size = width in pixels.
     const BUTTONS = [
-      {
-        id: 'center-btn',
-        src: 'danger.png',  
-        href: 'logon.html',
-        alt: 'Center Button',
-        x: 50.1,
-        y: 41.1,
-        size: 187,
-      },
-      {
-        id: 'top-left-btn',
-        src: 'go.png', 
-        href: 'https://go.fiscon.cc',
-        alt: 'Top Left Button',
-        x: 30,
-        y: 8.2,
-        size: 362,
-      },
-      {
-        id: 'bottom-right-btn',
-        src: 'zoom.png',
-        href: 'https://fiscon.cc',
-        alt: 'Bottom Right Button',
-        x: 75.6,
-        y: 69.3,
-        size: 181,
-      },
-      {
-        id: 'bottom-left-btn-2',
-        src: 'zf.png',
-        href: 'https://fiscon.cc',
-        alt: 'Bottom Left Button 2',
-        x: 29.7,
-        y: 74.2,
-        size: 346,
-      },
-      {
-        id: 'bottom-left-btn-1',
-        src: 'dawg.png', 
-        href: 'https://fiscon.cc',
-        alt: 'Bottom Left Button 1',
-        x: 24.4,
-        y: 56,
-        size: 196,
-      },
-      // Add more buttons here...
+      { id: 'center-btn', src: 'danger.png', href: 'logon.html', alt: 'Center Button', x: 50.1, y: 41.1, size: 187 },
+      { id: 'top-left-btn', src: 'go.png', href: 'https://go.fiscon.cc', alt: 'Top Left Button', x: 30, y: 8.2, size: 362 },
+      { id: 'bottom-right-btn', src: 'zoom.png', href: 'https://fiscon.cc', alt: 'Bottom Right Button', x: 75.6, y: 69.3, size: 181 },
+      { id: 'bottom-left-btn-2', src: 'zf.png', href: 'https://fiscon.cc', alt: 'Bottom Left Button 2', x: 29.7, y: 74.2, size: 346 },
+      { id: 'bottom-left-btn-1', src: 'dawg.png', href: 'https://fiscon.cc', alt: 'Bottom Left Button 1', x: 24.4, y: 56, size: 196 },
     ];
 
-    // Mobile breakpoint used to switch views (keep in sync with CSS var)
-    const MOBILE_BREAKPOINT = 768; // px
+    const MOBILE_BREAKPOINT = 768;
 
-    /* ======================================================
-     * RUNTIME — no changes needed beyond this point
-     * ====================================================== */
     const desktopEl = document.getElementById('desktop');
     const mobileEl  = document.getElementById('mobile');
     const layerEl   = document.getElementById('layer');
     const bgEl      = document.getElementById('bg');
 
-    // Set background image (contain ensures top & bottom always visible)
     bgEl.style.backgroundImage = `url(${BACKGROUND_URL})`;
 
-    // Render buttons from BUTTONS array
     function renderButtons() {
       layerEl.innerHTML = '';
       for (const btn of BUTTONS) {
@@ -159,7 +182,7 @@
         a.style.setProperty('--btn-size', (btn.size || 140) + 'px');
         a.setAttribute('aria-label', btn.alt || 'Button');
         a.setAttribute('id', btn.id);
-        a.target = '_self'; // change to '_blank' if you want new tab
+        a.target = '_self';
 
         const img = document.createElement('img');
         img.src = btn.src;
@@ -174,7 +197,6 @@
       }
     }
 
-    // Toggle between desktop and mobile placeholder
     function setView() {
       const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
       if (isMobile) {
@@ -190,7 +212,6 @@
       }
     }
 
-    // Allow users to force-open desktop on mobile
     document.getElementById('open-desktop-anyway')?.addEventListener('click', () => {
       mobileEl.classList.add('hidden');
       desktopEl.classList.remove('hidden');
@@ -198,16 +219,9 @@
       desktopEl.setAttribute('aria-hidden', 'false');
     });
 
-    // Initialize
     renderButtons();
     setView();
-
-    // Update on resize
     window.addEventListener('resize', setView);
-
-    // Optional: If you truly want a separate page for mobile later, you can
-    // replace setView() logic with a redirect like this:
-    // if (window.innerWidth < MOBILE_BREAKPOINT) { window.location.href = 'mobile.html'; }
   </script>
 
   <noscript>
@@ -217,6 +231,4 @@
     </div>
   </noscript>
 </body>
-
 </html>
-
