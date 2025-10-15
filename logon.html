@@ -6,15 +6,38 @@
   <title>Go -> Fiscon</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
-    html, body { height: 100%; margin: 0; }
-    body { background: #000; overflow: hidden; }
+    html, body { height: 100%; margin: 0; font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; }
+    body { background: #000; overflow: hidden; color: #fff; }
 
-    #desktop {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden;
+    .rainbow-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: linear-gradient(
+        120deg,
+        rgba(255,105,180,0.8),
+        rgba(255,165,0,0.8),
+        rgba(135,206,250,0.8),
+        rgba(186,85,211,0.8),
+        rgba(60,179,113,0.8)
+      );
+      background-size: 400% 400%;
+      animation: rainbowFade 20s ease infinite;
+      will-change: background-position;
     }
+
+    @keyframes rainbowFade {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .rainbow-bg { animation: none; }
+    }
+
+    #desktop { position: relative; width: 100vw; height: 100vh; overflow: hidden; z-index: 1; }
 
     .bg-fit-contain {
       position: absolute;
@@ -22,19 +45,166 @@
       background-position: center;
       background-repeat: no-repeat;
       background-size: contain;
-      background-color: #000;
+      background-color: transparent;
     }
+
+    #login-overlay {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: transparent;
+      z-index: 10;
+    }
+
+    .login-panel {
+      position: absolute;
+      left: 50%;
+      top: 41.1%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 24px;
+      border-radius: 16px;
+      background: rgba(20, 20, 20, 0.35);
+      backdrop-filter: blur(10px) saturate(120%);
+      -webkit-backdrop-filter: blur(10px) saturate(120%);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+      min-width: 260px;
+      animation: fadeIn 400ms ease-out;
+      transform-origin: center center;
+    }
+
+    .avatar {
+      width: 86px;
+      height: 86px;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.15);
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .username { color: #fff; font-weight: 500; margin-top: 6px; margin-bottom: 4px; }
+
+    .input {
+      width: 100%;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+
+    .input input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-size: 15px;
+    }
+
+    .btn {
+      width: 100%;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 15px;
+      cursor: pointer;
+      background: #0078d4;
+      color: #fff;
+      transition: filter 0.2s ease;
+    }
+    .btn:hover { filter: brightness(1.05); }
+    .btn:active { filter: brightness(0.95); }
+
+    .error { color: #ffb4b4; font-size: 13px; min-height: 18px; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translate(-50%, calc(-50% + 8px)); }
+      to   { opacity: 1; transform: translate(-50%, -50%); }
+    }
+
+    @keyframes shake {
+      10%, 90% { transform: translate(-50%, -50%) translateX(-1px); }
+      20%, 80% { transform: translate(-50%, -50%) translateX(2px); }
+      30%, 50%, 70% { transform: translate(-50%, -50%) translateX(-4px); }
+      40%, 60% { transform: translate(-50%, -50%) translateX(4px); }
+    }
+
+    .shake { animation: shake 420ms cubic-bezier(.36,.07,.19,.97) both; }
   </style>
 </head>
 <body>
-  <main id="desktop">
-    <div id="bg" class="bg-fit-contain"></div>
+  <div class="rainbow-bg" aria-hidden="true"></div>
+
+  <main id="desktop" role="main" aria-label="Desktop background">
+    <div id="bg" class="bg-fit-contain" aria-hidden="true"></div>
   </main>
 
+  <div id="login-overlay" aria-modal="true" role="dialog" aria-label="Sign in">
+    <div class="login-panel" id="login-panel">
+      <img src="user.png" alt="User" class="avatar" />
+      <div class="username" id="login-username">Zoom F</div>
+
+      <div class="input">
+        <input id="password" type="password" placeholder="Password" autocomplete="off" aria-label="Password" />
+      </div>
+
+      <button class="btn" id="login-btn">Sign in</button>
+      <div class="error" id="error-msg"></div>
+    </div>
+  </div>
+
   <script>
-    const BACKGROUND_URL = 'login.png'; // Replace with your background image path
+    const BACKGROUND_URL = 'login.png';
     const bgEl = document.getElementById('bg');
     bgEl.style.backgroundImage = `url(${BACKGROUND_URL})`;
+
+    const panel = document.getElementById('login-panel');
+    const pwd = document.getElementById('password');
+    const btn = document.getElementById('login-btn');
+    const err = document.getElementById('error-msg');
+
+    function failLogin() {
+      const messages = [
+        "The password is incorrect. Try again.",
+        "That didn’t work. Double-check your password.",
+        "Still not right. Caps Lock?",
+      ];
+      err.textContent = messages[Math.floor(Math.random() * messages.length)];
+      panel.classList.remove('shake');
+      void panel.offsetWidth;
+      panel.classList.add('shake');
+      pwd.value = '';
+      pwd.focus();
+    }
+
+    btn.addEventListener('click', failLogin);
+    pwd.addEventListener('keydown', e => { if (e.key === 'Enter') failLogin(); });
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { e.preventDefault(); failLogin(); }
+    });
+
+    const focusables = () => panel.querySelectorAll('input,button');
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab') return;
+      const f = Array.from(focusables());
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        last.focus(); e.preventDefault();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        first.focus(); e.preventDefault();
+      }
+    });
+
+    pwd.focus();
   </script>
 </body>
 </html>
